@@ -3,11 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC World</title>
+    <title>NFC World — 实验空间</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: black;
+            color: #d0d0d0;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* 中心容器 */
+        .center {
+            text-align: center;
+            z-index: 3;
+            max-width: 80%;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.8;
+        }
+
+        /* 动态线条背景 */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>欢迎来到 NFC World 🌍</h1>
-    <p>这是一个连接虚拟与现实的微世界实验。</p>
-    <p>由 Orion 创建。</p>
+
+    <!-- 背景动态线条 -->
+    <canvas id="bg"></canvas>
+
+    <!-- 中心文字 -->
+    <div class="center">
+        <h1>NFC World — 实验装置空间</h1>
+        <p>一个由 NFC 触发的数字入口。</p>
+        <p>虚拟 × 现实 · 微型世界的交互实验。</p>
+        <p>Created by Orion.</p>
+    </div>
+
+    <script>
+        // 简单的动态线条背景（科技实验室感）
+        const canvas = document.getElementById("bg");
+        const ctx = canvas.getContext("2d");
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.onresize = resize;
+
+        let t = 0;
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "rgba(255,255,255,0.15)";
+            ctx.lineWidth = 1;
+
+            let lines = 20;
+            for (let i = 0; i < lines; i++) {
+                ctx.beginPath();
+                for (let x = 0; x < canvas.width; x += 10) {
+                    let y = Math.sin((x + t + i * 50) * 0.01) * 30 + i * (canvas.height / lines);
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            t += 1.5;
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
+
 </body>
 </html>
