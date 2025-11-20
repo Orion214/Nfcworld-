@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC World – 实验空间</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            margin: 0;
+            background: black;
+            color: #d0d0d0;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        nav {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+            z-index: 999;
+        }
+        
+        nav a {
+            color: #d0d0d0;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            transition: 0.3s;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+        
+        nav a:hover {
+            color: white;
+            text-shadow: 0 0 8px #fff;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        #bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2;
+            width: 90%;
+            max-width: 800px;
+            padding: 20px;
+        }
+        
+        .center h1 {
+            font-size: clamp(28px, 8vw, 42px);
+            margin-bottom: 15px;
+            color: white;
+            letter-spacing: 2px;
+            line-height: 1.2;
+        }
+        
+        .center p {
+            font-size: clamp(14px, 4vw, 16px);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        /* 两个弹窗 - 移动端优化 */
+        #contactOverlay, #aboutOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(20px);
+            z-index: 9999;
+            align-items: flex-start; /* 改为顶部对齐 */
+            justify-content: center;
+            overflow-y: auto; /* 允许垂直滚动 */
+            padding: 20px 0;
+        }
+        
+        .box {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: clamp(30px, 8vw, 60px) clamp(20px, 6vw, 50px);
+            box-shadow: 0 0 100px rgba(180,0,255,0.25);
+            max-width: 95%;
+            width: 600px;
+            text-align: center;
+            animation: pop 0.8s ease-out;
+            margin: 20px 0;
+        }
+        
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 35px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: 0.3s;
+            color: #d0d0d0;
+            background: none;
+            border: none;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+        }
+        
+        .box h3 {
+            font-size: clamp(20px, 6vw, 26px);
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            color: white;
+        }
+
+        /* 联系页面样式 - 移动端优化 */
+        .social {
+            display: flex;
+            justify-content: center;
+            gap: clamp(20px, 8vw, 70px);
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social a img {
+            width: clamp(60px, 20vw, 88px);
+            height: clamp(60px, 20vw, 88px);
+            transition: all .5s;
+            filter: brightness(0) invert(1);
+        }
+        
+        .social a img:hover {
+            transform: translateY(-15px) scale(1.35);
+            filter: brightness(0) invert(1) drop-shadow(0 0 20px rgba(255,255,255,0.7));
+        }
+
+        /* 关于页面样式 - 移动端优化 */
+        .about-content {
+            max-width: 100%;
+            margin: 0 auto;
+            text-align: left;
+        }
+        
+        .section-title {
+            font-size: clamp(16px, 5vw, 20px);
+            color: white;
+            margin: 25px 0 15px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        
+        .section-title:nth-child(1) { animation-delay: 0.2s; }
+        .section-title:nth-child(3) { animation-delay: 1.2s; }
+        .section-title:nth-child(5) { animation-delay: 2.2s; }
+        .section-title:nth-child(7) { animation-delay: 3.2s; }
+        
+        .paragraph {
+            font-size: clamp(14px, 4vw, 15px);
+            line-height: 1.7;
+            margin: 12px 0;
+            opacity: 0;
+            transform: translateY(15px);
+            animation: fadeInUp 0.8s ease-out forwards;
+            text-indent: 2em;
+            text-align: justify;
+        }
+        
+        .paragraph.emphasis {
+            font-size: clamp(15px, 4vw, 16px);
+            color: white;
+            font-style: italic;
+            margin: 15px 0;
+            padding-left: 12px;
+            border-left: 2px solid rgba(180,0,255,0.6);
+            text-indent: 0;
+        }
+        
+        .paragraph.highlight {
+            background: rgba(180,0,255,0.1);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(180,0,255,0.2);
+            text-indent: 0;
+        }
+
+        /* 动画延迟设置 */
+        .paragraph:nth-child(2) { animation-delay: 0.4s; }
+        .paragraph:nth-child(4) { animation-delay: 0.6s; }
+        .paragraph:nth-child(6) { animation-delay: 0.8s; }
+        .paragraph:nth-child(8) { animation-delay: 1.0s; }
+        .paragraph:nth-child(10) { animation-delay: 1.4s; }
+        .paragraph:nth-child(12) { animation-delay: 1.6s; }
+        .paragraph:nth-child(14) { animation-delay: 1.8s; }
+        .paragraph:nth-child(16) { animation-delay: 2.0s; }
+        .paragraph:nth-child(18) { animation-delay: 2.4s; }
+        .paragraph:nth-child(20) { animation-delay: 2.6s; }
+        .paragraph:nth-child(22) { animation-delay: 2.8s; }
+        .paragraph:nth-child(24) { animation-delay: 3.0s; }
+        .paragraph:nth-child(26) { animation-delay: 3.4s; }
+        .paragraph:nth-child(28) { animation-delay: 3.6s; }
+
+        @keyframes pop {
+            from { transform: scale(0.6); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 移动端特定优化 */
+        @media (max-width: 768px) {
+            nav {
+                top: 10px;
+                gap: 12px;
+                padding: 8px 16px;
+            }
+            
+            nav a {
+                font-size: 13px;
+                padding: 5px 10px;
+            }
+            
+            .center {
+                padding: 15px;
+            }
+            
+            #contactOverlay, #aboutOverlay {
+                padding: 10px 0;
+                align-items: flex-start;
+            }
+            
+            .box {
+                margin: 10px 0;
+                border-radius: 16px;
+            }
+            
+            .social {
+                gap: 15px;
+            }
+            
+            .social a img {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .paragraph {
+                line-height: 1.6;
+                margin: 10px 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            nav {
+                gap: 8px;
+                padding: 6px 12px;
+            }
+            
+            nav a {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+            
+            .social {
+                gap: 12px;
+            }
+            
+            .social a img {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .box {
+                padding: 25px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html">首页</a>
+        <a href="works.html">作品</a>
+        <a onclick="openAbout()">关于</a>
+        <a onclick="openContact()">联系</a>
+    </nav>
+
+    <canvas id="bg"></canvas>
+
+    <div class="center">
+        <h1>NFC World – 实验空间</h1>
+        <p>一个由 NFC 触发的数字入口。</p>
+        <p>虚拟 × 现实 · 微型世界的交互实验。</p>
+        <p>Created by Orion.</p>
+    </div>
+
+    <!-- 关于弹窗 - 移动端优化 -->
+    <div id="aboutOverlay" onclick="if(event.target===this)closeAbout()">
+        <div class="box">
+            <button class="close" onclick="closeAbout()" aria-label="关闭">×</button>
+            <div class="about-content">
+                <div class="section-title">理念核心</div>
+                <p class="paragraph emphasis">微界相信：每个人都拥有一个专属于自己的生命宇宙。</p>
+                <p class="paragraph">微景观不是装饰，而是一个被浓缩的生态系统。光线、湿度、苔藓的延展、草木的生长，共同构成你的节律。</p>
+                <p class="paragraph">每一次浇水、整理与照料，都是在参与一场微型世界的演化。</p>
+                
+                <div class="section-title">现实连接</div>
+                <p class="paragraph">在快速与高压的现实中，人与自然的连接不断变薄；微景观以最细微的方式恢复这种连接，让生命以自己的逻辑生长、延展与重组。</p>
+                <p class="paragraph highlight">它记录时间，也记录你。每一个微景观的生态轨迹不可复制，它永远是你的唯一版本。</p>
+                
+                <div class="section-title">数字延伸</div>
+                <p class="paragraph">数字化不是炫技，而是生态的延伸。现实中的缸体会被一比一重建为虚拟模型；你在虚拟里触碰、旋转、观察的结构，都源于现实世界的真实纹理。</p>
+                <p class="paragraph">瓶盖与 NFC 的结合则提供了最简洁的入口。废弃物从无意义被转化为"世界的钥匙"，完成一次价值反转，也让行动本身成为点亮生态的仪式。</p>
+                
+                <div class="section-title">最终愿景</div>
+                <p class="paragraph emphasis">最终，每个人都在微界拥有一个现实与数字互为映照的"个人生态"。</p>
+                <p class="paragraph highlight">它是一个被看见的小世界，也是一个被理解的自我延伸。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 联系弹窗 -->
+    <div id="contactOverlay" onclick="if(event.target===this)closeContact()">
+        <div class="box">
+            <button class="close" onclick="closeContact()" aria-label="关闭">×</button>
+            <h3>联系我 / Follow Me</h3>
+            <div class="social">
+                <a href="https://www.instagram.com/orionzzh" target="_blank" aria-label="Instagram">
+                    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@latest/icons/instagram.svg" alt="Instagram">
+                </a>
+                <a href="https://xhslink.com/m/41gZc4W5Rxz" target="_blank" aria-label="小红书">
+                    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@latest/icons/xiaohongshu.svg" alt="小红书">
+                </a>
+                <a href="https://pin.it/8KYht581f" target="_blank" aria-label="Pinterest">
+                    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@latest/icons/pinterest.svg" alt="Pinterest">
+                </a>
+                <a href="https://youtube.com/@orion-k6l" target="_blank" aria-label="YouTube">
+                    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@latest/icons/youtube.svg" alt="YouTube">
+                </a>
+            </div>
+            <p>Instagram @orionzzh　｜　小红书 @中中中中和</p>Pinterest & YouTube 见图标</p>
+        </div>
+    </div>
+
+    <script>
+        // 初始化画布和动画
+        const canvas = document.getElementById("bg");
+        const ctx = canvas.getContext("2d");
+        
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const lines = [];
+            const count = Math.min(60, Math.floor(window.innerWidth / 15)); // 移动端减少线条数量
+            
+            for(let i = 0; i < count; i++) {
+                lines.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    speed: 0.3 + Math.random() * 0.4, // 移动端减慢速度
+                    length: 30 + Math.random() * 70
+                });
+            }
+            
+            function animate() {
+                ctx.fillStyle = "rgba(0,0,0,0.1)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = "rgba(255,255,255,0.15)";
+                ctx.lineWidth = 1;
+                
+                lines.forEach(line => {
+                    ctx.beginPath();
+                    ctx.moveTo(line.x, line.y);
+                    ctx.lineTo(line.x, line.y + line.length);
+                    ctx.stroke();
+                    line.y += line.speed;
+                    if(line.y > canvas.height) line.y = -line.length;
+                });
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        // 窗口调整大小时重绘画布
+        window.addEventListener('resize', initCanvas);
+        window.addEventListener('load', initCanvas);
+
+        // 弹窗功能
+        function openContact() {
+            document.getElementById("contactOverlay").style.display = "flex";
+            document.body.style.overflow = "hidden"; // 防止背景滚动
+        }
+        
+        function closeContact() {
+            document.getElementById("contactOverlay").style.display = "none";
+            document.body.style.overflow = "auto";
+        }
+        
+        function openAbout() {
+            document.getElementById("aboutOverlay").style.display = "flex";
+            document.body.style.overflow = "hidden";
+        }
+        
+        function closeAbout() {
+            document.getElementById("aboutOverlay").style.display = "none";
+            document.body.style.overflow = "auto";
+        }
+        
+        // ESC键关闭弹窗
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeContact();
+                closeAbout();
+            }
+        });
+
+        // 移动端触摸优化
+        let startY = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+    </script>
+</body>
+</html>
